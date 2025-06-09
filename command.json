@@ -1,0 +1,69 @@
+{
+  "name": "cr2metadata-extract",
+  "label": "CR2 Metadata Extractor",
+  "description": "Extracts metadata from CR2 files and saves as XML using exiftool",
+  "version": "0.2",
+  "image": "anzhao1981/exiftool:v0.1",
+  "type": "docker",
+  "command-line": "exiftool -X /input/RESOURCES/CR2 > /output/metadata.xml & cp /output/metadata.xml /input/RESOURCES/metadata_xml",
+  "override-entrypoint": true,
+  "mounts": [
+    {
+      "name": "in",
+      "writable": true,
+      "path": "/input"
+    },
+    {
+      "name": "out",
+      "writable": true,
+      "path": "/output"
+    }
+  ],
+  "environment-variables": {},
+  "ports": {},
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "metadata_xml",
+      "description": "Extracted metadata in XML format",
+      "required": false,
+      "mount": "out",
+      "path": "/output/metadata.xml"
+    }
+  ],
+  "xnat": [
+    {
+      "name": "cr2metadata-extract",
+      "label": "CR2 Metadata Extractor",
+      "description": "Extract metadata from CR2 files in a session",
+      "contexts": [
+        "xnat:xcSessionData"
+      ],
+      "external-inputs": [
+        {
+          "name": "session",
+          "description": "Input session",
+          "type": "Session",
+          "required": true,
+          "provides-files-for-command-mount": "in",
+          "load-children": false
+        }
+      ],
+      "derived-inputs": [],
+      "output-handlers": [
+        {
+          "name": "metadata_xml",
+          "accepts-command-output": "metadata_xml",
+          "as-a-child-of": "session",
+          "type": "Resource",
+          "label": "Extracted Metadata",
+          "tags": []
+        }
+      ]
+    }
+  ],
+  "container-labels": {},
+  "generic-resources": {},
+  "ulimits": {},
+  "secrets": []
+}
