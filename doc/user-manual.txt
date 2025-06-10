@@ -1,0 +1,1 @@
+This document folder contains the user manual of ACEMID uploader.
