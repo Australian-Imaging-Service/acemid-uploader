@@ -5,7 +5,7 @@
   "version": "0.2",
   "image": "anzhao1981/exiftool:v0.1",
   "type": "docker",
-  "command-line": "exiftool -X /input/RESOURCES/CR2 > /output/metadata.xml & cp /output/metadata.xml /input/RESOURCES/metadata_xml",
+  "command-line": "exiftool -X /input/RESOURCES/CR2/* > /output/metadata.xml & cp /output/metadata.xml /input/RESOURCES/metadata_xml",
   "override-entrypoint": true,
   "mounts": [
     {
