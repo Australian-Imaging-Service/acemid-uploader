@@ -25,11 +25,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repository owner
+        run: echo "REPO_OWNER_LC=${REPO_OWNER,,}" >> $GITHUB_ENV
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner.toLower() }}/acemid-uploader:latest .
-
+          docker build -t ghcr.io/${REPO_OWNER_LC}/acemid-uploader:latest .
       - name: Push Docker image
         run: |
-          docker push ghcr.io/${{ github.repository_owner.toLower() }}/acemid-uploader:latest
-
+          docker push ghcr.io/${REPO_OWNER_LC}/acemid-uploader:latest
