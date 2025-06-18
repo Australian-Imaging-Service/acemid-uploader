@@ -27,8 +27,7 @@
       "name": "metadata_xml",
       "description": "Extracted metadata in XML format",
       "required": false,
-      "mount": "out",
-      "path": "/output/metadata.xml"
+      "mount": "out"
     }
   ],
   "xnat": [
@@ -56,7 +55,7 @@
           "accepts-command-output": "metadata_xml",
           "as-a-child-of": "session",
           "type": "Resource",
-          "label": "Extracted Metadata",
+          "label": "ExtractedMetadata",
           "tags": []
         }
       ]
