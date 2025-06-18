@@ -5,7 +5,7 @@
   "version": "0.2",
   "image": "anzhao1981/exiftool:v0.1",
   "type": "docker",
-  "command-line": "exiftool -X /input/RESOURCES/CR2/* > /output/metadata.xml 2> /output/error.log && echo \"Listing /output contents:\" >> /output/error.log && ls -lh /output >> /output/error.log && echo \"Checking if metadata.xml exists...\" >> /output/error.log && if [ -f /output/metadata.xml ]; then echo \"metadata.xml exists and is ready.\" >> /output/error.log; else echo \"metadata.xml NOT FOUND!\" >> /output/error.log; fi",
+  "command-line": "exiftool -X /input/RESOURCES/CR2/* > /output/metadata.xml 2> /output/error.log && chmod 644 /output/metadata.xml && echo \"Listing /output contents:\" >> /output/error.log && ls -lh /output >> /output/error.log && echo \"Checking if metadata.xml exists...\" >> /output/error.log && if [ -f /output/metadata.xml ]; then echo \"metadata.xml exists and is ready.\" >> /output/error.log; else echo \"metadata.xml NOT FOUND!\" >> /output/error.log; fi && sync && sleep 2",
   "override-entrypoint": true,
   "mounts": [
     {
@@ -26,7 +26,7 @@
     {
       "name": "metadata_xml",
       "description": "Extracted metadata in XML format",
-      "required": false,
+      "required": true,
       "mount": "out"
     }
   ],
