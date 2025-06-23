@@ -51,6 +51,8 @@ for file in *.db; do
                 if [ -d "$dir" ]; then
                     # Remove the trailing slash from the directory name
                     dir_name=$(basename "$dir")
+                    # Include the .db file in the upload
+                    cp "$file" "$dir" 
                     # Create a zip file for the directory
                     zip -r "${dir_name}.zip" "$dir"
                     # Move the zip file into the original directory
