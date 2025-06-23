@@ -78,6 +78,14 @@ for file in *.db; do
                 echo "Session ID: $SESSION_ID"
                 echo "Scan ID: $SCAN_ID"
 
+                # Check if the SESSION_LABEL is numeric
+                if  [[ "$SESSION_LABEL" =~ ^[0-9]+$ ]]; then
+                    echo "folder name is in numeric format and extract the datetime stamp."
+                else
+                    echo "folder name is not in numeric format and skiping ..."
+                    continue
+                fi
+
                 # Check if the session already exists
                 RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
                 if [ "$RESPONSE" -eq 200 ]; then
