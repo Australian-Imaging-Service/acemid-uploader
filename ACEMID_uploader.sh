@@ -78,14 +78,6 @@ for file in *.db; do
                 echo "Session ID: $SESSION_ID"
                 echo "Scan ID: $SCAN_ID"
 
-                # Check if the SESSION_LABEL is numeric
-                if  [[ "$SESSION_LABEL" =~ ^[0-9]+$ ]]; then
-                    echo "folder name is in numeric format and extract the datetime stamp."
-                else
-                    echo "folder name is not in numeric format and skiping ..."
-                    continue
-                fi
-
                 # Check if the session already exists
                 RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
                 if [ "$RESPONSE" -eq 200 ]; then
@@ -96,8 +88,18 @@ for file in *.db; do
 
                     # Create a session (experiment) with session type
                     SESSION_TYPE="xnat:xcSessionData"  # Replace with the correct session type
-                    RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$SESSION_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                    RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$SESSION_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                    # Check if the SESSION_LABEL is numeric
+                    if  [[ "$SESSION_LABEL" =~ ^[0-9]+$ ]]; then
+                        echo "folder name is in numeric format and insert the date stamp."
+                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$SESSION_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$SESSION_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                    else
+                        echo "folder name is not numeric format and skiping insert the date stamp ..."
+                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                        continue
+                    fi
+                    
 
                     # Check if the session creation was successful
                     if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
