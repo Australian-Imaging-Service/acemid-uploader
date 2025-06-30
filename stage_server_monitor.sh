@@ -17,7 +17,7 @@ if ! command -v inotifywait &> /dev/null; then
 fi
 
 # Check if the ACEMID upload script is exists
-if [ ! -x "ACEMID_UPLOAD_SCRIPT" ]; then
+if [ ! -x "$ACEMID_UPLOAD_SCRIPT" ]; then
     echo "Error: ACEMID Upload script is not found at $ACEMID_UPLOAD_SCRIPT"
     exit 1
 fi
@@ -30,12 +30,12 @@ inotifywait -m -e create --format '%w%f' "$WATCH_DIR" | while read NEW_ENTRY
 do
     if [ -d "$NEW_ENTRY" ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - New directory detected: $NEW_ENTRY" | tee -a "$LOG_FILE"
-        "$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY"  >> $LOG_FILE 2>&1
+        "./$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY"  
     elif [ -f "$NEW_ENTRY" ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - New file detected: $NEW_ENTRY" | tee -a "$LOG_FILE"
-        "$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY"  >> $LOG_FILE 2>&1
+        "./$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY" 
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - New item detected (unknown type): $NEW_ENTRY" | tee -a "$LOG_FILE"
-        "$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY"  >> $LOG_FILE 2>&1
+        "./$ACEMID_UPLOAD_SCRIPT" "$NEW_ENTRY" 
     fi
 done
