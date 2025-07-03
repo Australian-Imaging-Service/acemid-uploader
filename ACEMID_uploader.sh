@@ -125,9 +125,9 @@ for file in *.db; do
                 fi
 
                 # Upload the single zip file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" &
+                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" -w "Upload Speed: %{speed_upload} bytes/sec\nDownload Speed: %{speed_download} bytes/sec\n" -o /dev/null -s
                 # Upload the extract content file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_loose_files/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
+                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" -w "Upload Speed: %{speed_upload} bytes/sec\nDownload Speed: %{speed_download} bytes/sec\n" -o /dev/null -s
                                
             done
         fi
