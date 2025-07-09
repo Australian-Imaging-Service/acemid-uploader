@@ -89,11 +89,13 @@ for file in *.db; do
                     # Create a session (experiment) with session type
                     SESSION_TYPE="xnat:xcSessionData"  # Replace with the correct session type
                     # Check if the SESSION_LABEL is numeric
-                    if  [[ "$SESSION_LABEL" =~ ^[0-9]{14}$ ]]; then
-                        FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d)                        
-                        echo "folder name is in numeric format and insert the date stamp."
-                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+
+                    if [[ "$SESSION_LABEL" =~ ^[0-9]{14,}$ ]]; then
+                       FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d 2>/dev/null)
+                       if [[ -n "$FORMATTED_DATE" ]]; then
+                          echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
+                          RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                          RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                     else
                         echo "folder name is not numeric format and skiping insert the date stamp ..."
                         RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
