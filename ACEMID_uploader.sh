@@ -79,61 +79,75 @@ for file in *.db; do
                 echo "Scan ID: $SCAN_ID"
 
                 # Check if the session already exists
-                RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
-                if [ "$RESPONSE" -eq 200 ]; then
-                    echo "Session $SESSION_ID already exists. Skipping creation."
+            RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
+            if [ "$RESPONSE" -eq 200 ]; then
+                echo "Session $SESSION_ID already exists. Skipping creation."
+            else
+                # Create a subject
+                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
+
+                # Create a session (experiment) with session type
+                SESSION_TYPE="xnat:xcSessionData" # Replace with the correct session type
+
+                # Check if the SESSION_LABEL is numeric
+                if [[ "$SESSION_LABEL" =~ ^[0-9]{14,}$ ]]; then
+                    FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d 2>/dev/null)
+                    if [[ -n "$FORMATTED_DATE" ]]; then
+                        echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
+
+                        # Parallel execution of curl commands for session creation with date
+                        {
+                            curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null
+                            curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null
+                        } | while read -r RESPONSE_CODE; do # Use a different variable name to avoid conflict
+                            if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 201 ]; then
+                                echo "Session created successfully."
+                            else
+                                echo "Failed to create session. HTTP response code: $RESPONSE_CODE"
+                                exit 1
+                            fi
+                        done
+                    fi # This 'fi' closes 'if [[ -n "$FORMATTED_DATE" ]]'
                 else
-                    # Create a subject
-                    curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
+                    echo "folder name is not numeric format and skipping insert the date stamp ..."
+                    # Parallel execution of curl commands for session creation without date
+                    {
+                        curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null
+                        curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null
+                    } | while read -r RESPONSE_CODE; do # Use a different variable name
+                        if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 201 ]; then
+                            echo "Session created successfully."
+                        else
+                            echo "Failed to create session. HTTP response code: $RESPONSE_CODE"
+                            exit 1
+                        fi
+                    done
+                fi # This 'fi' closes 'if [[ "$SESSION_LABEL" =~ ^[0-9]{14,}$ ]]'
+            fi # This 'fi' closes 'if [ "$RESPONSE" -eq 200 ]' (session existence check)
 
-                    # Create a session (experiment) with session type
-                    SESSION_TYPE="xnat:xcSessionData"  # Replace with the correct session type
-                    # Check if the SESSION_LABEL is numeric
+            # Create a scan for both session types (single_zip and loose_files)
+            SCAN_TYPE="xnat:xcScanData" # Replace with the correct scan type
 
-                    if [[ "$SESSION_LABEL" =~ ^[0-9]{14,}$ ]]; then
-                       FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d 2>/dev/null)
-                       if [[ -n "$FORMATTED_DATE" ]]; then
-                          echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
-                          RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                          RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                       fi
-                    else
-                        echo "folder name is not numeric format and skiping insert the date stamp ..."
-                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                        continue
-                    fi
-                    
+            # Check and create scan for single_zip session
+            RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+            if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+                echo "Scan for ${SESSION_ID}_single_zip created successfully."
+            else
+                echo "Failed to create scan for ${SESSION_ID}_single_zip. HTTP response code: $RESPONSE"
+                exit 1
+            fi
 
-                    # Check if the session creation was successful
-                    if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
-                        echo "Session created successfully."
-                    else
-                        echo "Failed to create session. HTTP response code: $RESPONSE"
-                        exit 1
-                    fi
-                fi
+            # Check and create scan for loose_files session
+            RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_loose_files/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+            if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+                echo "Scan for ${SESSION_ID}_loose_files created successfully."
+            else
+                echo "Failed to create scan for ${SESSION_ID}_loose_files. HTTP response code: $RESPONSE"
+                exit 1
+            fi
 
-                # Create a scan
-                SCAN_TYPE="xnat:xcScanData"  # Replace with the correct scan type
-                RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
-                RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_loose_files/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+            # Upload the single zip file
+            curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" &
 
-                # Check if the scan creation was successful
-                if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
-                    echo "Scan created successfully."
-                else
-                    echo "Failed to create scan. HTTP response code: $RESPONSE"
-                    exit 1
-                fi
-
-                # Upload the single zip file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_single_zip/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" &
-                # Upload the extract content file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_loose_files/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
-                               
-            done
-        fi
-    fi
-done
-
+            # Upload the extract content file
+            curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}_loose_files/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
