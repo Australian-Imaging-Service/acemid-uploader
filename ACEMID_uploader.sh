@@ -19,12 +19,13 @@ mkdir -p error
 
 # Function to measure transfer speed
 measure_transfer_speed() {
+    timestamp=$(date -Iseconds)
     local operation=$1
     local url=$2
     local output_file=$3
     local format_string='{
         "operation": "'"$operation"'",
-        "timestamp": "%{time_iso8601}",
+        "timestamp": "'"$timestamp"'",
         "url": "%{url_effective}",
         "http_code": %{http_code},
         "time_total": %{time_total},
