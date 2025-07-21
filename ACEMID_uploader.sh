@@ -91,7 +91,7 @@ for file in *.db; do
                     SESSION_TYPE="xnat:xcSessionData"  # Replace with the correct session type
                     # Check if the SESSION_LABEL is numeric
 
-                    if [[ "$SESSION_LABEL" =~ ^[0-9]{14,}$ ]]; then
+                    if [[ "$SESSION_LABEL" =~ ^[0-9]{14}$ || "$SESSION_LABEL" =~ ^[0-9]{17}$ ]]; then
                        FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d 2>/dev/null)
                        if [[ -n "$FORMATTED_DATE" ]]; then
                           echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
