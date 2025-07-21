@@ -39,6 +39,7 @@ for file in *.db; do
             echo "File: $file"
             echo "Before underscore: $before_underscore"
             echo "After underscore: $after_underscore"
+            echo "Ziping files in progress and it will take some time, please wait ..."
 
             # Add the zip process, before zip, make sure the temp folder holds the original data
             TEMP_DIR="temp_$filename"
