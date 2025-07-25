@@ -61,6 +61,14 @@ echo "Split csv files ordered by per patient created in directory: $output_dir"
 
 # The zip file contains all the dermoscopy images (jpg or png) to the corresponding patient.
 FILE_PATH="${patient_image_path}.zip"
+
+# Check if the ZIP file exists
+if [ ! -f "$FILE_PATH" ]; then
+  echo "Error: ZIP file '$FILE_PATH' not found. Skipping upload."
+  exit 1
+fi
+
+
 for SUBJECT_ID in $patient_mrns
 do
   SUBJECT_LABEL=$SUBJECT_ID
