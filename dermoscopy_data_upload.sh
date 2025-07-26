@@ -59,18 +59,42 @@ done <<< "$patient_mrns"
 
 echo "Split csv files ordered by per patient created in directory: $output_dir"
 
-# Check for jpg or png files in current directory or subdirectories
-image_files=$(find . -type f \( -iname "*.jpg" -o -iname "*.png" \))
+# -------------------------------
+# Prepare the Zip file for upload
+# -------------------------------
 
-if [ -z "$image_files" ]; then
-  echo "No JPG or PNG files found in the current directory or its subdirectories. Skipping zip creation."
+# Extract the folder name from the first ImagePath entry
+image_folder=$(csvcut -c ImagePath "$input_file" | tail -n +2 | head -n 1 | sed 's/=HYPERLINK(""//; s/"")//; s/^"//; s/"$//' | cut -d'/' -f1)
+
+if [ -z "$image_folder" ]; then
+  echo "No valid ImagePath found in CSV."
   exit 1
-else
-  echo "Found image files. Creating zip archive..."
-  zip -r dermoscopy_images.zip $(echo "$image_files")
-  patient_image_path="dermoscopy_images"
-  FILE_PATH="${patient_image_path}.zip"
 fi
+
+echo "Image folder identified: $image_folder"
+
+# Create the folder if it doesn't exist
+mkdir -p "$image_folder"
+
+# Copy all .jpg and .png files listed in ImagePath into the folder
+csvcut -c ImagePath "$input_file" | tail -n +2 | while IFS= read -r raw_path; do
+  # Clean up Excel-style HYPERLINK formatting
+  clean_path=$(echo "$raw_path" | sed 's/=HYPERLINK(""//; s/"")//; s/^"//; s/"$//')
+
+  src_file="$clean_path"
+  if [ -f "$src_file" ]; then
+    cp "$src_file" "$image_folder/"
+  else
+    echo "Warning: File not found - "$src_file""
+  fi
+done
+
+# Create a zip archive of the folder
+zip_file="${image_folder}.zip"
+zip -r "$zip_file" "$image_folder"
+
+# Set the zip file path for upload
+FILE_PATH="$zip_file"
 
 
 # Check if the ZIP file exists
