@@ -59,8 +59,19 @@ done <<< "$patient_mrns"
 
 echo "Split csv files ordered by per patient created in directory: $output_dir"
 
-# The zip file contains all the dermoscopy images (jpg or png) to the corresponding patient.
-FILE_PATH="${patient_image_path}.zip"
+# Check for jpg or png files in current directory or subdirectories
+image_files=$(find . -type f \( -iname "*.jpg" -o -iname "*.png" \))
+
+if [ -z "$image_files" ]; then
+  echo "No JPG or PNG files found in the current directory or its subdirectories. Skipping zip creation."
+  exit 1
+else
+  echo "Found image files. Creating zip archive..."
+  zip -r dermoscopy_images.zip $(echo "$image_files")
+  patient_image_path="dermoscopy_images"
+  FILE_PATH="${patient_image_path}.zip"
+fi
+
 
 # Check if the ZIP file exists
 if [ ! -f "$FILE_PATH" ]; then
