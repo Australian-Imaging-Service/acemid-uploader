@@ -81,7 +81,6 @@ fi
 
 
 for SUBJECT_ID in $patient_mrns
-echo $SUBJECT_ID
 do
   SUBJECT_LABEL=$SUBJECT_ID
   SESSION_ID=$SUBJECT_ID
