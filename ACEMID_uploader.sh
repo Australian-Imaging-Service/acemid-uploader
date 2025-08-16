@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Check for required tools for uploader
+for cmd in curl zip find basename mkdir mv cp; do
+    command -v "$cmd" >/dev/null 2>&1 || { echo "Error: $cmd is not installed."; exit 1; }
+done
+
 # XNAT server URL
 XNAT_URL="your_xnat_url"
 
