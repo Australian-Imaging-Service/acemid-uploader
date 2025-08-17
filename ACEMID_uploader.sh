@@ -1,5 +1,13 @@
 #!/bin/bash
 
+#create more robust scripts by ensuring that they terminate on errors, do not reference unset variables, and correctly report failures in command pipelines.
+set -euo pipefail
+
+# Check for required tools for uploader
+for cmd in curl zip find basename mkdir mv cp; do
+    command -v "$cmd" >/dev/null 2>&1 || { echo "Error: $cmd is not installed."; exit 1; }
+done
+
 # XNAT server URL
 XNAT_URL="your_xnat_url"
 
@@ -91,8 +99,22 @@ for file in *.db; do
                     SESSION_TYPE="xnat:xcSessionData"  # Replace with the correct session type
                     # Check if the SESSION_LABEL is numeric
 
+
+
                     if [[ "$SESSION_LABEL" =~ ^[0-9]{14}$ || "$SESSION_LABEL" =~ ^[0-9]{17}$ ]]; then
-                       FORMATTED_DATE=$(date -d "${SESSION_LABEL:0:8}" +%Y-%m-%d 2>/dev/null)
+                       DATE_INPUT="${SESSION_LABEL:0:8}"
+
+                       # Try GNU-style first
+                       if FORMATTED_DATE=$(date -d "$DATE_INPUT" "+%Y-%m-%d" 2>/dev/null); then
+                           :
+                       # Fallback to BSD-style
+                       elif FORMATTED_DATE=$(date -j -f "%Y%m%d" "$DATE_INPUT" "+%Y-%m-%d" 2>/dev/null); then
+                           :
+                       else
+                          echo "Invalid date format: $DATE_INPUT"
+                          FORMATTED_DATE=""
+                       fi
+
                        if [[ -n "$FORMATTED_DATE" ]]; then
                           echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
                           RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
