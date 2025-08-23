@@ -72,21 +72,32 @@ for file in *.db; do
             done
 
             # Loop through all zip files in the current directory and its subdirectories
-            find "$after_underscore" -type f -name "*.zip" | while read -r FILENAME; do
-                echo "Filename: $FILENAME"
+            find "$after_underscore" -type f -name "*.zip" | while read -r ZIP_FILE; do
+                 echo "Processing zip file: $ZIP_FILE"
 
-                # Use before_underscore as SUBJECT_ID
+                 # Check if the file is the start of a multi-part zip file
+                 if ! unzip -l "$ZIP_FILE" > /dev/null 2>&1; then
+                     echo "Skipping multi-part zip file component: $ZIP_FILE"
+                     continue
+                 fi
+
+                 # Extract the base name and extension from the file path
+                 BASE_FILENAME=$(basename "$ZIP_FILE" .zip)
+                 DIR_NAME=$(basename "$(dirname "$ZIP_FILE")")
+
+                 # Use before_underscore as SUBJECT_ID
                 SUBJECT_ID=$before_underscore
-                SESSION_ID=$(echo $FILENAME | cut -d'/' -f2)
-                SCAN_ID=$(echo $FILENAME | cut -d'/' -f3 | cut -d'.' -f1)
+                SESSION_ID=$DIR_NAME
+                SCAN_ID=$BASE_FILENAME
 
-                # Subject label and session label can be the same as their IDs or customized
-                SUBJECT_LABEL=$SUBJECT_ID
-                SESSION_LABEL=$SESSION_ID
                 echo "Subject ID: $SUBJECT_ID"
                 echo "Session ID: $SESSION_ID"
                 echo "Scan ID: $SCAN_ID"
 
+                # Subject label and session label can be the same as their IDs or customized
+                SUBJECT_LABEL=$SUBJECT_ID
+                SESSION_LABEL=$SESSION_ID
+             
                 # Check if the session already exists
                 RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
                 if [ "$RESPONSE" -eq 200 ]; then
