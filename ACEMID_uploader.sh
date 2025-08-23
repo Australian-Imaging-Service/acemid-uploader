@@ -62,8 +62,8 @@ for file in *.db; do
                     dir_name=$(basename "$dir")
                     # Include the .db file in the upload
                     cp "$file" "$dir" 
-                    # Create a zip file for the directory
-                    zip -r "${dir_name}.zip" "$dir"
+                    # split into chunks of a maximum size of 2GB. 
+                    zip -s 2g -r "${dir_name}.zip" "$dir"
                     # Move the zip file into the original directory
                     mv "${dir_name}.zip" "$dir"
                     # Remove all files and folders in the original directory except the zip file
