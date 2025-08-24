@@ -3,6 +3,9 @@
 #create more robust scripts by ensuring that they terminate on errors, do not reference unset variables, and correctly report failures in command pipelines.
 set -euo pipefail
 
+#print each command before executing it for debug purpose
+set -x
+
 # Check for required tools for uploader
 for cmd in curl zip find basename mkdir mv cp; do
     command -v "$cmd" >/dev/null 2>&1 || { echo "Error: $cmd is not installed."; exit 1; }
