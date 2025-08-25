@@ -3,9 +3,6 @@
 #create more robust scripts by ensuring that they terminate on errors, do not reference unset variables, and correctly report failures in command pipelines.
 set -euo pipefail
 
-#print each command before executing it for debug purpose
-set -x
-
 # Check for required tools for uploader
 for cmd in curl zip find basename mkdir mv cp; do
     command -v "$cmd" >/dev/null 2>&1 || { echo "Error: $cmd is not installed."; exit 1; }
@@ -57,6 +54,9 @@ for file in *.db; do
             mkdir -p "$TEMP_DIR"
             cp -r "$after_underscore" "$TEMP_DIR/"
 
+            #turn on debug
+            set -x
+
             # Loop through all items in the after_underscore directory
             for dir in "$after_underscore"/*/ ; do
                 # Check if the item is a directory
@@ -73,6 +73,9 @@ for file in *.db; do
                     find "$dir" -mindepth 1 ! -name "${dir_name}.zip" -exec rm -rf {} +
                 fi
             done
+            
+            #turn off debug
+            set +x
 
             # Loop through all zip files in the current directory and its subdirectories
             find "$after_underscore" -type f -name "*.zip" | while read -r ZIP_FILE; do
