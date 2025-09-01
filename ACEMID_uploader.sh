@@ -103,6 +103,24 @@ for file in *.db; do
                 # Subject label and session label can be the same as their IDs or customized
                 SUBJECT_LABEL=$SUBJECT_ID
                 SESSION_LABEL=$SESSION_ID
+
+                # Reassemble split zip files if needed
+                if ls "${SCAN_ID}".z* 1> /dev/null 2>&1; then
+                    echo "Detected split zip files for $SCAN_ID. Reassembling..."
+                    zip -s 0 "${SCAN_ID}.zip" --out "combined_${SCAN_ID}.zip"
+                    if [ $? -eq 0 ]; then
+                        echo "Successfully reassembled into combined_${SCAN_ID}.zip"
+                        FILENAME="combined_${SCAN_ID}.zip"
+                    else
+                        echo "Failed to reassemble zip file for $SCAN_ID"
+                        exit 1
+                    fi
+                else
+                    FILENAME="${SCAN_ID}.zip"
+                fi
+
+
+
              
                 # Check if the session already exists
                 RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
