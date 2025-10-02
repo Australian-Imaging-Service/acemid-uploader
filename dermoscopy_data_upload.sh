@@ -36,6 +36,11 @@ patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uni
 patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
 
+# Extract the part after the forward slash, which containns the image name and format
+patient_image_name=$(echo "$patient_image_path" | sed -E 's/^=HYPERLINK\("//; s/"\)$//' | awk -F'/' '{print $2}')
+echo "Image name is: $patient_image_name"
+
+
 # Create a directory to store the output csv files ordered by per patient
 output_dir="per_patient_csv_files"
 mkdir -p "$output_dir"
