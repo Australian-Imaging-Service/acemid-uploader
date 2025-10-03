@@ -29,15 +29,15 @@ patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
 echo "Patient mrn is: $patient_mrns"
 
 # Extract unique ImagePath values
-patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
+patient_image=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
 
 
 # Extract the part before the forward slash and remove the unwanted characters
-patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
+patient_image_path=$(echo "$patient_image" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
 
 # Extract the part after the forward slash, which containns the image name and format
-patient_image_name=$(echo "$patient_image_path" | sed -E 's/^=HYPERLINK\("//; s/"\)$//' | awk -F'/' '{print $2}')
+patient_image_name=$(echo "$patient_image" | sed -E 's/^=HYPERLINK\("//; s/"\)\)"$//' | awk -F'/' '{print $2}' | sed 's/"//g' | sed 's/)$//')
 echo "Image name is: $patient_image_name"
 
 
