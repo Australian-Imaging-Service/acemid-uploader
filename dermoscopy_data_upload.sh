@@ -29,12 +29,17 @@ patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
 echo "Patient mrn is: $patient_mrns"
 
 # Extract unique ImagePath values
-patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
+patient_image=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
 
 
 # Extract the part before the forward slash and remove the unwanted characters
-patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
+patient_image_path=$(echo "$patient_image" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
+
+# Extract the part after the forward slash, which containns the image name and format
+patient_image_name=$(echo "$patient_image" | sed -E 's/^=HYPERLINK\("//; s/"\)\)"$//' | awk -F'/' '{print $2}' | sed 's/"//g' | sed 's/)$//')
+echo "Image name is: $patient_image_name"
+
 
 # Create a directory to store the output csv files ordered by per patient
 output_dir="per_patient_csv_files"
@@ -79,26 +84,29 @@ if [ ! -f "$FILE_PATH" ]; then
   exit 1
 fi
 
-
 for SUBJECT_ID in $patient_mrns
 do
   SUBJECT_LABEL=$SUBJECT_ID
   SESSION_ID=$SUBJECT_ID
   SCAN_ID="1"
 
-  # Create the subject ID
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
+  echo "Creating subject: $SUBJECT_ID with label: $SUBJECT_LABEL"
+  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0"
 
-  # Create the session
   SESSION_TYPE="xnat:xcSessionData"
   SESSION_LABEL=$SESSION_ID
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0" &
+  echo "Creating session: $SESSION_ID with label: $SESSION_LABEL"
+  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0"
 
-  # Create the scan
   SCAN_TYPE="xnat:xcScanData"
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" &
+  echo "Creating scan: $SCAN_ID for session: $SESSION_ID"
+  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0"
 
-  # Upload the file
+  echo "Uploading file: $FILE_PATH to scan: $SCAN_ID"
+  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true\" -F \"file=@$FILE_PATH\""
   curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILE_PATH"
 done
 
