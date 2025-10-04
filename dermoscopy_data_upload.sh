@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # XNAT server URL
-XNAT_URL="your_xnat_url"
+XNAT_URL="your-xnat-url"
 
 # XNAT credentials
-USERNAME="your_xnat_username"
-PASSWORD="your_xnat_password"
+USERNAME="your-xnat-username"
+PASSWORD="your-xnat-password"
 
 # XNAT Project ID
-PROJECT_ID="your_xnat_project_id"
+PROJECT_ID="your-xnat-project-id"
 
 # Check if the user has provided a csv input file or not
 if [ -z "$1" ]; then
@@ -30,16 +30,14 @@ echo "Patient mrn is: $patient_mrns"
 
 # Extract unique ImagePath values
 patient_image=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
-
+echo "Patient image path is: $patient_image"
 
 # Extract the part before the forward slash and remove the unwanted characters
 patient_image_path=$(echo "$patient_image" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
 
-# Extract the part after the forward slash, which containns the image name and format
 patient_image_name=$(echo "$patient_image" | sed -E 's/^=HYPERLINK\("//; s/"\)\)"$//' | awk -F'/' '{print $2}' | sed 's/"//g' | sed 's/)$//')
 echo "Image name is: $patient_image_name"
-
 
 # Create a directory to store the output csv files ordered by per patient
 output_dir="per_patient_csv_files"
@@ -64,8 +62,18 @@ done <<< "$patient_mrns"
 
 echo "Split csv files ordered by per patient created in directory: $output_dir"
 
-# The zip file contains all the dermoscopy images (jpg or png) to the corresponding patient.
-FILE_PATH="${patient_image_path}.zip"
+# Check for jpg or png files in current directory or subdirectories
+image_files=$(find . -type f \( -iname "*.jpg" -o -iname "*.png" \))
+
+if [ -z "$image_files" ]; then
+  echo "No JPG or PNG files found in the current directory or its subdirectories. Skipping zip creation."
+  exit 1
+else
+  echo "Found image files. Creating zip archive..."
+  zip -r dermoscopy_images.zip $(echo "$image_files")
+  patient_image_path="dermoscopy_images"
+  FILE_PATH="${patient_image_path}.zip"
+fi
 
 # Check if the ZIP file exists
 if [ ! -f "$FILE_PATH" ]; then
