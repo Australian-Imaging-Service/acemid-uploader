@@ -49,6 +49,18 @@ for file in *.db; do
             echo "After underscore: $after_underscore"
             echo "zip files in progress and it will take some time, please wait ..."
 
+        # Check if there is any PDF files contained in the current directories and its sub-directories
+        PDF_FILE=$(find "$after_underscore" -type f -iname "*.pdf")
+
+        if [[ -n "$PDF_FILE" ]]; then
+            echo "PDF files detected — removing them before zipping."
+            # Remove all found PDF files
+            find "$after_underscore" -type f -iname "*.pdf" -exec rm -f {} +
+        else
+            # No pdf file found, safe to the zip process
+            echo "No PDF files found — proceeding."
+        fi
+
             # Add the zip process, before zip, make sure the temp folder holds the original data
             TEMP_DIR="temp_$filename"
             mkdir -p "$TEMP_DIR"
