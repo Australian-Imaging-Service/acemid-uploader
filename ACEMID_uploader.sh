@@ -61,6 +61,18 @@ for file in *.db; do
             echo "No PDF files found — proceeding."
         fi
 
+        # Check if there is any txt log files contained in the current directories and its sub-directories
+        TXT_FILE=$(find "$after_underscore" -type f -iname "*.txt")
+
+        if [[ -n "$TXT_FILE" ]]; then
+            echo "TXT log files detected — removing them before zipping."
+            # Remove all found TXT files
+            find "$after_underscore" -type f -iname "*.txt" -exec rm -f {} +
+        else
+            # No TXT log files found, safe to the zip process
+            echo "No TXT files found — proceeding."
+        fi
+
             # Add the zip process, before zip, make sure the temp folder holds the original data
             TEMP_DIR="temp_$filename"
             mkdir -p "$TEMP_DIR"
