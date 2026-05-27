@@ -101,8 +101,42 @@ for file in *.db; do
 
                 # Use before_underscore as SUBJECT_ID
                 SUBJECT_ID=$before_underscore
-                SESSION_ID=$(echo $FILENAME | cut -d'/' -f2)
-                SCAN_ID=$(echo $FILENAME | cut -d'/' -f3 | cut -d'.' -f1)
+                # Extract timestamp from filename, and use it as scan id
+                FULL_TIMESTAMP=$(basename "$FILENAME" .zip)
+
+                # Check if folder name is a valid timestamp (14 digits)
+                if [[ "$FULL_TIMESTAMP" =~ ^[0-9]{14}$ ]]; then
+                    echo "Timestamp folder detected: $FULL_TIMESTAMP"
+
+                    # Extract date (first 8 digits)
+                    DATE_INPUT="${FULL_TIMESTAMP:0:8}"
+
+                    # Convert to YYYY-MM-DD
+                    if FORMATTED_DATE=$(date -d "$DATE_INPUT" "+%Y-%m-%d" 2>/dev/null); then
+                        :
+                    elif FORMATTED_DATE=$(date -j -f "%Y%m%d" "$DATE_INPUT" "+%Y-%m-%d" 2>/dev/null); then
+                        :
+                    else
+                        echo "Invalid date format: $DATE_INPUT"
+                        continue
+                    fi
+
+                    # SESSION = date only
+                    SESSION_ID="$FORMATTED_DATE"
+                    SESSION_LABEL="$FORMATTED_DATE"
+
+                    # SCAN = full timestamp
+                    SCAN_ID="$FULL_TIMESTAMP"
+
+                else
+                    echo "Non-timestamp folder detected: $FULL_TIMESTAMP"
+
+                    # Keep original behavior
+                    SESSION_ID="$FULL_TIMESTAMP"
+                    SESSION_LABEL="$FULL_TIMESTAMP"
+                    SCAN_ID="$FULL_TIMESTAMP"
+                fi
+
 
                 # Subject label and session label can be the same as their IDs or customized
                 SUBJECT_LABEL=$SUBJECT_ID
