@@ -122,8 +122,9 @@ for file in *.db; do
                     fi
 
                     # SESSION = date only
-                    SESSION_ID="$FORMATTED_DATE"
-                    SESSION_LABEL="$FORMATTED_DATE"
+                    SESSION_ID="${DATE_INPUT}"
+                    SESSION_LABEL="${FORMATTED_DATE}"
+
 
                     # SCAN = full timestamp
                     SCAN_ID="$FULL_TIMESTAMP"
