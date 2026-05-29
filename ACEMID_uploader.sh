@@ -91,7 +91,7 @@ for file in *.db; do
                     # Move the zip file into the original directory
                     mv "${dir_name}.zip" "$dir"
                     # Remove all files and folders in the original directory except the zip file
-                    find "$dir" -mindepth 1 ! -name "${dir_name}.zip" -exec rm -rf {} +
+                    #find "$dir" -mindepth 1 ! -name "${dir_name}.zip" -exec rm -rf {} +
                 fi
             done
 
