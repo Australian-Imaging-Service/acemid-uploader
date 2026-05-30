@@ -87,7 +87,10 @@ for file in *.db; do
                     # Include the .db file in the upload
                     cp "$file" "$dir" 
                     # Create a zip file for the directory
-                    zip -rv "${dir_name}.zip" "$dir"
+                    #zip -rv "${dir_name}.zip" "$dir"
+                    du -sb "$dir" | awk '{print $1}' > /tmp/size.txt
+                    TOTAL=$(cat /tmp/size.txt)
+                    tar -cf - "$dir" | pv -s $TOTAL | zip > "${dir_name}.zip"
                     # Move the zip file into the original directory
                     mv "${dir_name}.zip" "$dir"
                     # Remove all files and folders in the original directory except the zip file
