@@ -126,7 +126,7 @@ for file in *.db; do
 
                     # SESSION = date only
                     SESSION_ID="${DATE_INPUT}"
-                    SESSION_LABEL="${FORMATTED_DATE}"
+                    SESSION_LABEL="${DATE_INPUT}"
 
 
                     # SCAN = full timestamp
@@ -144,7 +144,6 @@ for file in *.db; do
 
                 # Subject label and session label can be the same as their IDs or customized
                 SUBJECT_LABEL=$SUBJECT_ID
-                SESSION_LABEL=$SESSION_ID
                 echo "Subject ID: $SUBJECT_ID"
                 echo "Session ID: $SESSION_ID"
                 echo "Scan ID: $SCAN_ID"
