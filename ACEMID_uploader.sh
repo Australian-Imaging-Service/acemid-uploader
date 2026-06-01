@@ -108,10 +108,11 @@ for file in *.db; do
                 FULL_TIMESTAMP=$(basename "$FILENAME" .zip)
 
                 # Check if folder name is a valid timestamp (14 digits)
-                if [[ "$FULL_TIMESTAMP" =~ ^[0-9]{14}$ ]]; then
+                # Accept both 14-digit and 17-digit timestamps
+                if [[ "$FULL_TIMESTAMP" =~ ^[0-9]{14}$ || "$FULL_TIMESTAMP" =~ ^[0-9]{17}$ ]]; then
                     echo "Timestamp folder detected: $FULL_TIMESTAMP"
 
-                    # Extract date (first 8 digits)
+                    # Extract first 8 digits as date
                     DATE_INPUT="${FULL_TIMESTAMP:0:8}"
 
                     # Convert to YYYY-MM-DD
@@ -125,21 +126,18 @@ for file in *.db; do
                     fi
 
                     # SESSION = date only
-                    SESSION_ID="${DATE_INPUT}"
-                    SESSION_LABEL="${DATE_INPUT}"
-
+                    SESSION_ID="$DATE_INPUT"
+                    SESSION_LABEL="$DATE_INPUT"
 
                     # SCAN = full timestamp
                     SCAN_ID="$FULL_TIMESTAMP"
-
                 else
                     echo "Non-timestamp folder detected: $FULL_TIMESTAMP"
-
-                    # Keep original behavior
                     SESSION_ID="$FULL_TIMESTAMP"
                     SESSION_LABEL="$FULL_TIMESTAMP"
                     SCAN_ID="$FULL_TIMESTAMP"
                 fi
+
 
 
                 # Subject label and session label can be the same as their IDs or customized
