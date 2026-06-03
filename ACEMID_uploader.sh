@@ -209,10 +209,15 @@ for file in *.db; do
                 fi
 
                 # Upload the single zip file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" &
+                #curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=false" -F "file=@$FILENAME" &
                 # Upload the extract content file
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
-                               
+                #curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
+
+                curl -X PUT "$XNAT_URL/data/projects/$PROJECT/subjects/$SUBJECT/experiments/$SESSION/resources/RAW/files/$(basename "$FILE")?inbody=true" \
+    -b JSESSIONID=$JSESSIONID \
+    -H "Content-Type: application/octet-stream" \
+    --data-binary @"$FILE"
+               
             done
         fi
     fi
