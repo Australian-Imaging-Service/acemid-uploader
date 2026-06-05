@@ -15,8 +15,8 @@ XNAT_URL="your_xnat_url"
 USERNAME="your_xnat_username"
 PASSWORD="your_xnat_password"
 
-JS_ID=$(curl -u $USERNAME:$PASSWORD -X POST $XNAT_URL/data/JSESSION)
-echo "JSESSION_ID is $JS_ID"
+XNAT_TOKEN=$(curl -u $USERNAME:$PASSWORD "$XNAT_URL/data/services/tokens/issue" | jq -r '.alias')
+echo "XNAT TOKEN is $XNAT_TOKEN"
 
 # Project ID
 PROJECT_ID="your_xnat_project_id"
@@ -147,10 +147,10 @@ for file in *.db; do
                 echo "Scan ID: $SCAN_ID"
 
                 # Create a subject
-                curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
+                curl -H "Authorization: Bearer $XNAT_TOKEN" -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
 
                 # Check if the session already exists
-                RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
+                RESPONSE=$(curl -H "Authorization: Bearer $XNAT_TOKEN" -X GET "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID" -w "%{http_code}" -o /dev/null)
                 if [ "$RESPONSE" -eq 200 ]; then
                     echo "Session $SESSION_ID already exists. Skipping creation and scans will be merged."
                 else
@@ -175,12 +175,12 @@ for file in *.db; do
 
                        if [[ -n "$FORMATTED_DATE" ]]; then
                           echo "Folder name is numeric and date stamp inserted: $FORMATTED_DATE"
-                          RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                          RESPONSE=$(curl -H "Authorization: Bearer $XNAT_TOKEN" -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                           #RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                        fi
                     else
                         echo "folder name is not numeric format and skiping insert the date stamp ..."
-                        RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                        RESPONSE=$(curl -H "Authorization: Bearer $XNAT_TOKEN" -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                         #RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_loose_files" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                         continue
                     fi
@@ -197,7 +197,7 @@ for file in *.db; do
 
                 # Create a scan
                 SCAN_TYPE="xnat:xcScanData"  # Replace with the correct scan type
-                RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
+                RESPONSE=$(curl -H "Authorization: Bearer $XNAT_TOKEN" -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
                 #RESPONSE=$(curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" -w "%{http_code}" -o /dev/null)
 
                 # Check if the scan creation was successful
@@ -219,7 +219,7 @@ for file in *.db; do
     #--data-binary @"$FILE"
 
                curl -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/resources/RAW/files/$(basename "$FILENAME")?inbody=true" \
-    -b JSESSIONID=$JS_ID \
+    -H "Authorization: Bearer $XNAT_TOKEN"\
     -H "Content-Type: application/octet-stream" \
     --data-binary @"$FILENAME"
 
