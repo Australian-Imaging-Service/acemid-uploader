@@ -213,10 +213,16 @@ for file in *.db; do
                 # Upload the extract content file
                 #curl --cookie JSESSIONID=$JS_ID -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILENAME" &
 
-                curl -X PUT "$XNAT_URL/data/projects/$PROJECT/subjects/$SUBJECT/experiments/$SESSION/resources/RAW/files/$(basename "$FILE")?inbody=true" \
-    -b JSESSIONID=$JSESSIONID \
+                #curl -X PUT "$XNAT_URL/data/projects/$PROJECT/subjects/$SUBJECT/experiments/$SESSION/resources/RAW/files/$(basename "$FILE")?inbody=true" \
+    #-b JSESSIONID=$JSESSIONID \
+    #-H "Content-Type: application/octet-stream" \
+    #--data-binary @"$FILE"
+
+               curl -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/resources/RAW/files/$(basename "$FILENAME")?inbody=true" \
+    -b JSESSIONID=$JS_ID \
     -H "Content-Type: application/octet-stream" \
-    --data-binary @"$FILE"
+    --data-binary @"$FILENAME"
+
                
             done
         fi
