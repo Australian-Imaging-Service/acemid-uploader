@@ -2,7 +2,7 @@
 
 This code repo contains several bash scripts for uploading ACEMID data to your XNAT.
 
-Before running the bash scripts, please make sure that you have turned on the External Camera Session (xnat:xcSessionData) and External Camera Scan (xnat:xcScanData) data types.
+Before running the bash scripts, please make sure that you have turned on the External Camera Session (xnat:xcSessionData) and External Camera Scan (xnat:xcScanData) data types if your XNAT version is 1.10 below. For XNAT version 1.10 or above, you uploaded new data type will be dynamically created on the fly.
 
 (1) ACEMID_uploader.sh The main ACEMID bash script to upload the cleaned vectra exported data files to your XNAT instance using JSESSIONID.
 
