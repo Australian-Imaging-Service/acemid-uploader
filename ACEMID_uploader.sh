@@ -218,7 +218,7 @@ for file in *.db; do
     #-H "Content-Type: application/octet-stream" \
     #--data-binary @"$FILE"
 
-               curl -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/resources/RAW/files/$(basename "$FILENAME")?inbody=true" \
+               curl -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/resources/RAW/files/$(basename "$FILENAME")?inbody=true&extract=true" \
     -b JSESSIONID=$JS_ID \
     -H "Content-Type: application/octet-stream" \
     --data-binary @"$FILENAME"
