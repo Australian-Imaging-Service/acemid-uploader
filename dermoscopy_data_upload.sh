@@ -28,6 +28,10 @@ fi
 lesion_id=$(csvcut -c LesionID "$input_file" | tail -n +2 | sort | uniq)
 echo "Lesion ID is: $lesion_id"
 
+# Extract CaptureDate values.
+capture_date=$(csvcut -c CaptureDate "$input_file" | tail -n +2 | sort | uniq)
+echo "Capture Date is: $capture_date"
+
 # Extract subject values and subject id is the PatientMRN in the CSV file.
 patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
 echo "Subject ID is: $patient_mrns"
