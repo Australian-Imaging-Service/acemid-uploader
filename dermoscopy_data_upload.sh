@@ -24,6 +24,10 @@ if ! command -v csvcut &> /dev/null || ! command -v csvgrep &> /dev/null; then
   exit 1
 fi
 
+# Extract LesionID values
+lesion_id=$(csvcut -c LesionID "$input_file" | tail -n +2 | sort | uniq)
+echo "Lesion ID is: $lesion_id"
+
 # Extract unique PatientMRN values
 patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
 echo "Patient mrn is: $patient_mrns"
