@@ -28,9 +28,9 @@ fi
 lesion_id=$(csvcut -c LesionID "$input_file" | tail -n +2 | sort | uniq)
 echo "Lesion ID is: $lesion_id"
 
-# Extract unique PatientMRN values
+# Extract subject values and subject id is the PatientMRN in the CSV file.
 patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
-echo "Patient mrn is: $patient_mrns"
+echo "Subject ID is: $patient_mrns"
 
 # Extract unique ImagePath values
 patient_image=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
