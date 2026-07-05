@@ -49,6 +49,12 @@ for file in *.db; do
             echo "After underscore: $after_underscore"
             echo "zip files in progress and it will take some time, please wait ..."
 
+        # Add the zip process, before zip, make sure the temp folder holds the original data
+        # Move it before the PDF and txt files removing to keep them in the temp folder
+        TEMP_DIR="temp_$filename"
+        mkdir -p "$TEMP_DIR"
+        cp -r "$after_underscore" "$TEMP_DIR/"
+
         # Check if there is any PDF files contained in the current directories and its sub-directories
         PDF_FILE=$(find "$after_underscore" -type f -iname "*.pdf")
 
@@ -72,11 +78,6 @@ for file in *.db; do
             # No TXT log files found, safe to the zip process
             echo "No TXT files found — proceeding."
         fi
-
-            # Add the zip process, before zip, make sure the temp folder holds the original data
-            TEMP_DIR="temp_$filename"
-            mkdir -p "$TEMP_DIR"
-            cp -r "$after_underscore" "$TEMP_DIR/"
 
             # Loop through all items in the after_underscore directory
             for dir in "$after_underscore"/*/ ; do
