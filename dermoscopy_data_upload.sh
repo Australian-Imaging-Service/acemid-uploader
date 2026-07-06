@@ -92,8 +92,8 @@ fi
 for SUBJECT_ID in $patient_mrns
 do
   SUBJECT_LABEL=$SUBJECT_ID
-  SESSION_ID=$SUBJECT_ID
-  SCAN_ID="1"
+  SESSION_ID=$capture_date
+  SCAN_ID=$lesion_id
 
   echo "Creating subject: $SUBJECT_ID with label: $SUBJECT_LABEL"
   echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
