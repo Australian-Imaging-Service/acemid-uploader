@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # XNAT server URL
 XNAT_URL="your-xnat-url"
 
