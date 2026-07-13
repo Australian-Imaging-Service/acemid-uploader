@@ -36,6 +36,10 @@ patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uni
 lesion_id=$(csvcut -c LesionID "$input_file" | tail -n +2 | sort | uniq)
 echo "Lesion ID is: $lesion_id"
 
+# Extract CaptureDate values.
+capture_date=$(csvcut -c CaptureDate "$input_file" | tail -n +2 | sort | uniq)
+echo "Capture Date is: $capture_date"
+
 
 # Extract the part before the forward slash and remove the unwanted characters
 patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
