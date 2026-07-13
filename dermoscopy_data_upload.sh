@@ -125,11 +125,9 @@ if [ ! -f "$FILE_PATH" ]; then
 fi
 
 
-for SUBJECT_ID in $patient_mrns
-do
+
   SUBJECT_LABEL=$SUBJECT_ID
   SESSION_ID=$SUBJECT_ID
-  SCAN_ID="1"
 
   # Create the subject ID
   curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0"
@@ -139,12 +137,52 @@ do
   SESSION_LABEL=$SESSION_ID
   curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0" 
 
-  # Create the scan
-  SCAN_TYPE="xnat:xcScanData"
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" 
+  for SCAN_ID in $lesion_id; do
+    echo "Processing LesionID / ScanID: $SCAN_ID"
 
-  # Upload the file
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILE_PATH"
+    # -------------------------------
+    # Collect images for this LesionID
+    # -------------------------------
+    lesion_folder="lesion_${SCAN_ID}"
+    mkdir -p "$lesion_folder"
+
+    # Extract only rows for this LesionID
+    csvgrep -c LesionID -m "$SCAN_ID" "$input_file" | \
+    csvcut -c ImagePath | tail -n +2 | while IFS= read -r raw_path; do
+
+        clean_path=$(echo "$raw_path" \
+            | sed 's/=HYPERLINK(""//; s/"")//; s/^"//; s/"$//')
+
+        if [ -f "$clean_path" ]; then
+            cp "$clean_path" "$lesion_folder/"
+        else
+            echo "Warning: File not found: $clean_path"
+        fi
+    done
+
+    # Zip only this lesion’s images
+    zip_file="${lesion_folder}.zip"
+    zip -r "$zip_file" "$lesion_folder"
+
+    # -------------------------------
+    # Create scan in XNAT
+    # -------------------------------
+    SCAN_TYPE="xnat:xcScanData"
+    curl -u $USERNAME:$PASSWORD -X PUT \
+      "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/scans/$SCAN_ID?xsiType=$SCAN_TYPE" \
+      -H "Content-Type: application/json" -H "Content-Length: 0"
+
+    # -------------------------------
+    # Upload ZIP to this scan
+    # -------------------------------
+    curl -u $USERNAME:$PASSWORD -X PUT \
+      "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID/scans/$SCAN_ID/resources/RAW/files?extract=true" \
+      -F "file=@${zip_file}"
+
+    echo "Uploaded images for LesionID $SCAN_ID"
 done
+
+
+
 
 echo "dermoscopy image data upload complete!"
