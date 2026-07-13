@@ -32,6 +32,11 @@ echo "Patient mrn is: $patient_mrns"
 patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
 
 
+# Extract LesionID values
+lesion_id=$(csvcut -c LesionID "$input_file" | tail -n +2 | sort | uniq)
+echo "Lesion ID is: $lesion_id"
+
+
 # Extract the part before the forward slash and remove the unwanted characters
 patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
