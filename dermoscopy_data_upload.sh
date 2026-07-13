@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # XNAT server URL
-XNAT_URL="your-xnat-url"
+XNAT_URL="your_xnat_url"
 
 # XNAT credentials
-USERNAME="your-xnat-username"
-PASSWORD="your-xnat-password"
+USERNAME="your_xnat_username"
+PASSWORD="your_xnat_password"
 
 # XNAT Project ID
-PROJECT_ID="your-xnat-project-id"
+PROJECT_ID="your_xnat_project_id"
 
 # Check if the user has provided a csv input file or not
 if [ -z "$1" ]; then
@@ -29,15 +29,12 @@ patient_mrns=$(csvcut -c PatientMRN "$input_file" | tail -n +2 | sort | uniq)
 echo "Patient mrn is: $patient_mrns"
 
 # Extract unique ImagePath values
-patient_image=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
-echo "Patient image path is: $patient_image"
+patient_image_path=$(csvcut -c ImagePath "$input_file" | tail -n +2 | sort | uniq)
+
 
 # Extract the part before the forward slash and remove the unwanted characters
-patient_image_path=$(echo "$patient_image" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
+patient_image_path=$(echo "$patient_image_path" | awk -F'/' '{print $1}' | sed 's/=HYPERLINK(""//; s/"")//' | tr -d '"' | head -n 1)
 echo "Patient image path is: $patient_image_path"
-
-patient_image_name=$(echo "$patient_image" | sed -E 's/^=HYPERLINK\("//; s/"\)\)"$//' | awk -F'/' '{print $2}' | sed 's/"//g' | sed 's/)$//')
-echo "Image name is: $patient_image_name"
 
 # Create a directory to store the output csv files ordered by per patient
 output_dir="per_patient_csv_files"
@@ -62,18 +59,55 @@ done <<< "$patient_mrns"
 
 echo "Split csv files ordered by per patient created in directory: $output_dir"
 
-# Filter image files that match the patient_image_name
-matching_images=$(find . -type f \( -iname "*.jpg" -o -iname "*.png" \) | grep -F "$patient_image_name")
 
-if [ -z "$matching_images" ]; then
-  echo "No matching image files found for name: $patient_image_name. Skipping zip creation."
+
+
+
+
+# -------------------------------
+# Prepare the Zip file for upload
+# -------------------------------
+
+# Extract the folder name from the first ImagePath entry
+image_folder=$(csvcut -c ImagePath "$input_file" | tail -n +2 | head -n 1 | sed 's/=HYPERLINK(""//; s/"")//; s/^"//; s/"$//' | cut -d'/' -f1)
+
+if [ -z "$image_folder" ]; then
+  echo "No valid ImagePath found in CSV."
   exit 1
-else
-  echo "Found matching image files. Creating zip archive..."
-  zip -r dermoscopy_images.zip $matching_images
-  patient_image_path="dermoscopy_images"
-  FILE_PATH="${patient_image_path}.zip"
 fi
+
+echo "Image folder identified: $image_folder"
+
+# Create the folder if it doesn't exist
+mkdir -p "$image_folder"
+
+# Copy all .jpg and .png files listed in ImagePath into the folder
+csvcut -c ImagePath "$input_file" | tail -n +2 | while IFS= read -r raw_path; do
+  # Clean up Excel-style HYPERLINK formatting
+  clean_path=$(echo "$raw_path" | sed 's/=HYPERLINK(""//; s/"")//; s/^"//; s/"$//')
+
+  src_file="$clean_path"
+  if [ -f "$src_file" ]; then
+    cp "$src_file" "$image_folder/"
+  else
+    echo "Warning: File not found - "$src_file""
+  fi
+done
+
+# Create a zip archive of the folder
+zip_file="${image_folder}.zip"
+zip -r "$zip_file" "$image_folder"
+
+# Set the zip file path for upload
+FILE_PATH="$zip_file"
+
+
+
+
+
+
+
+
 
 # Check if the ZIP file exists
 if [ ! -f "$FILE_PATH" ]; then
@@ -81,29 +115,26 @@ if [ ! -f "$FILE_PATH" ]; then
   exit 1
 fi
 
+
 for SUBJECT_ID in $patient_mrns
 do
   SUBJECT_LABEL=$SUBJECT_ID
   SESSION_ID=$SUBJECT_ID
   SCAN_ID="1"
 
-  echo "Creating subject: $SUBJECT_ID with label: $SUBJECT_LABEL"
-  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0"
+  # Create the subject ID
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0" &
 
+  # Create the session
   SESSION_TYPE="xnat:xcSessionData"
   SESSION_LABEL=$SESSION_ID
-  echo "Creating session: $SESSION_ID with label: $SESSION_LABEL"
-  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0"
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}" -H "Content-Type: application/json" -H "Content-Length: 0" &
 
+  # Create the scan
   SCAN_TYPE="xnat:xcScanData"
-  echo "Creating scan: $SCAN_ID for session: $SESSION_ID"
-  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE\" -H \"Content-Type: application/json\" -H \"Content-Length: 0\""
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0"
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID?xsiType=$SCAN_TYPE" -H "Content-Type: application/json" -H "Content-Length: 0" &
 
-  echo "Uploading file: $FILE_PATH to scan: $SCAN_ID"
-  echo "curl -u $USERNAME:$PASSWORD -X PUT \"$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true\" -F \"file=@$FILE_PATH\""
+  # Upload the file
   curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/${SESSION_ID}/scans/$SCAN_ID/resources/RAW/files?extract=true" -F "file=@$FILE_PATH"
 done
 
