@@ -133,7 +133,7 @@ fi
   curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID?label=$SUBJECT_LABEL" -H "Content-Type: application/json" -H "Content-Length: 0"
 
   # Create the date
-  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}_single_zip&date=$FORMATTED_DATE" -H "Content-Type: application/json" -H "Content-Length: 0"
+  curl -u $USERNAME:$PASSWORD -X PUT "$XNAT_URL/data/archive/projects/$PROJECT_ID/subjects/$SUBJECT_ID/experiments/$SESSION_ID?xsiType=$SESSION_TYPE&label=${SESSION_LABEL}&date=$capture_date" -H "Content-Type: application/json" -H "Content-Length: 0"
 
   # Create the session
   SESSION_TYPE="xnat:xcSessionData"
