@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#to fail fast and exit immediately upon encountering an error
+set -euo pipefail
+
 # XNAT server URL
 XNAT_URL="your_xnat_url"
 
